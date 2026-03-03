@@ -37,3 +37,6 @@ AI Plant Disease Detection Using EfficientNetB3
 
 ## 🏗️ Architecture
 
+<img width="990" height="305" alt="image" src="https://github.com/user-attachments/assets/b92940a9-78c6-496e-b8aa-28734bbdc3d3" />
+
+
