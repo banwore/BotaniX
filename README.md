@@ -18,8 +18,8 @@ AI Plant Disease Detection Using EfficientNetB3
 
 | Name | Instagram | GitHub |
 |------|-----------|--------|
-| **Pratik Pokhrel** | [@pratikpokhrl](https://instagram.com/pratikpokhrl) | [pratikpokhrl](https://github.com/pratikpokhrl) |
-| **Raunak Bhetwal** | [@raunakbhetwal](https://instagram.com/raunakbhetwal) | [raunakbhetwal](https://github.com/raunakbhetwal) |
+| **Pratik Pokhrel** | [@pratikpokhrl](https://instagram.com/pratikpokhrl) | [spongly](https://github.com/Spongly) |
+| **Raunak Bhetwal** | [@raunakbhetwal](https://instagram.com/raunakbhetwal) | [raunakbhetwal](https://github.com/worrye) |
 
 ---
 
