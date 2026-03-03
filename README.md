@@ -39,4 +39,39 @@ AI Plant Disease Detection Using EfficientNetB3
 
 <img width="990" height="305" alt="image" src="https://github.com/user-attachments/assets/b92940a9-78c6-496e-b8aa-28734bbdc3d3" />
 
+### Model Performance
+| Model | Accuracy |
+|-------|----------|
+| VGG16 | 88.5% |
+| ResNet50 | 92.4% |
+| **EfficientNetB3 (Ours)** | **97.6%** |
 
+![Confusion Matrix](assets/chart_confusion_matrix.png)
+![Training Curves](assets/chart_training_curve.png)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.9+
+- TensorFlow 2.15+
+- (Optional) Ollama for local LLM
+- (Optional) Google Gemini API key
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/Spongly/BotaniX
+cd BotaniX
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Download/place model files
+# Place model.keras or best_model_phase1.keras in root directory
