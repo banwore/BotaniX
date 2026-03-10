@@ -109,44 +109,8 @@ BotaniX is an intelligent agricultural tool designed to help farmers, researcher
 ## 🏗️ System Architecture
 
 ### High-Level Architecture
+<img width="990" height="305" alt="image" src="https://github.com/user-attachments/assets/81431ec8-acdc-4a7e-8b85-0e09682f232f" />
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    User Interface                        │
-│              (Web Frontend - Flask/HTML/JS)              │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│            Flask Web Server Backend                      │
-│  - Image upload handling                                │
-│  - Request routing                                      │
-│  - Session management                                   │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        ▼              ▼              ▼
-   ┌─────────┐  ┌──────────┐  ┌─────────────┐
-   │ Vision  │  │   LLM    │  │  Database   │
-   │ Model   │  │ Selector │  │  (Diseases) │
-   │(Efficient│  │(Gemini/  │  │             │
-   │NetB3)  │  │ Ollama)  │  │             │
-   └────┬────┘  └────┬─────┘  └─────────────┘
-        │            │
-        │      ┌─────┴─────┐
-        │      ▼           ▼
-        │  Gemini API  Ollama Server
-        │     (Cloud)    (Local)
-        │
-        └──────────┬──────────┘
-                   ▼
-         ┌──────────────────────┐
-         │  Prediction Output   │
-         │  - Disease Class     │
-         │  - Confidence Score  │
-         │  - Recommendations   │
-         └──────────────────────┘
-```
 
 ### Data Flow
 
