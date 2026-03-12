@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepVision | Real Model Inference</title>
+    <style>
+        
+        :root {
+            --bg: #050505;
+            --accent: #00f3ff;
+            --secondary: #0066ff;
+            --matrix: #00ff41;
+            --text-main: #ffffff;
+            --card-size: 280px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        nav {
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #111;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+        }
+
+        .brand b {
+            color: var(--accent);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            justify-content: center;
+        }
+
+        button,
+        .btn-upload {
+            background: transparent;
+            border: 1px solid #333;
+            color: #888;
+            padding: 12px 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        button:hover,
+        .btn-upload:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+
+        .btn-primary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .stage-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 40px;
+            padding: 50px;
+            perspective: 1000px;
+        }
+
+        .unit {
+            width: var(--card-size);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.2;
+            transform: translateY(20px);
+            transition: all 0.8s;
+        }
+
+        .unit.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .unit-label {
+            font-size: 0.8rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            opacity: 0;
+        }
+
+        .unit.active .unit-label {
+            opacity: 1;
+        }
+
+        .display-area {
+            width: var(--card-size);
+            height: var(--card-size);
+            position: relative;
+            background: #080808;
+            border-radius: 4px;
+            border: 1px solid #222;
+            overflow: hidden;
+        }
+
+        .display-content {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .arrow {
+            font-size: 30px;
+            color: #222;
+            margin-top: calc(var(--card-size) / 2);
+            transition: 0.5s;
+        }
+
+        .arrow.active {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        
+        #scanner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            display: none;
+            z-index: 10;
+        }
+
+        .matrix-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            grid-template-rows: repeat(14, 1fr);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+        }
+
+        .matrix-cell {
+            font-family: monospace;
+            font-size: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--matrix);
+            opacity: 0;
+            transition: opacity 0.3s;
+            background: #000;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .link {
+            stroke: #222;
+            stroke-width: 1;
+        }
+
+        .node {
+            fill: #111;
+            stroke: #444;
+            stroke-width: 2;
+        }
+
+        .node.active {
+            fill: var(--accent);
+            stroke: #fff;
+            filter: drop-shadow(0 0 5px var(--accent));
+        }
+
+        .particle {
+            fill: #fff;
+            opacity: 0;
+        }
+
+        .floating-weight {
+            font-family: monospace;
+            font-size: 10px;
+            fill: var(--matrix);
+            opacity: 0;
+        }
+
+        .result-box {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(145deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .result-box.revealed::before {
+            opacity: 1;
+        }
+
+        .result-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .result-box.revealed .result-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .main-res {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: 1px;
+            line-height: 1.4;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease 0.2s;
+        }
+
+        .result-box.revealed .main-res {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .conf-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            opacity: 0;
+            transition: opacity 0.5s ease 0.4s;
+        }
+
+        .result-box.revealed .conf-container {
+            opacity: 1;
+        }
+
+        .conf-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .conf-circle::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent);
+            border-right-color: var(--accent);
+            
+            transform: rotate(-45deg);
+            
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .conf-value {
+            font-size: 0.7rem;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .conf-label {
+            color: #555;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .predictions-list {
+            width: 90%;
+            margin-top: 5px;
+        }
+
+        .pred-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .result-box.revealed .pred-item:nth-child(1) {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.5s;
+        }
+
+        .result-box.revealed .pred-item:nth-child(2) {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.6s;
+        }
+
+        .result-box.revealed .pred-item:nth-child(3) {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.7s;
+        }
+
+        .pred-rank {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.6rem;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .pred-item:first-child .pred-rank {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            color: #000;
+            font-weight: bold;
+        }
+
+        .pred-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pred-name {
+            font-size: 0.7rem;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pred-item:first-child .pred-name {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .pred-bar-track {
+            height: 3px;
+            background: #1a1a1a;
+            border-radius: 2px;
+            margin-top: 3px;
+            overflow: hidden;
+        }
+
+        .pred-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .pred-pct {
+            font-size: 0.65rem;
+            font-family: monospace;
+            color: #555;
+            width: 40px;
+            text-align: right;
+        }
+
+        .pred-item:first-child .pred-pct {
+            color: var(--accent);
+        }
+
+        .wiki-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            margin-left: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            vertical-align: middle;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .result-box.revealed .wiki-btn {
+            opacity: 1;
+            transform: scale(1);
+            transition-delay: 0.3s;
+        }
+
+        .wiki-btn:hover {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .wiki-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--accent);
+            transition: fill 0.3s;
+        }
+
+        .wiki-btn:hover svg {
+            fill: #000;
+        }
+
+        
+        #server-status {
+            color: #ff3333;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="brand">DEEP<b>VISION</b></div>
+        <div style="font-size: 0.8rem; color: #666;">CONNECTED TO: LOCALHOST:5000</div>
+    </nav>
+
+    <div class="controls">
+        <label class="btn-upload">
+            Upload Image
+            <input type="file" id="fileInput" accept="image/*">
+        </label>
+        <button id="startBtn" class="btn-primary" disabled>Analyze with Model</button>
+        <button id="resetBtn" onclick="location.reload()">Reset</button>
+    </div>
+    <div id="server-status">⚠️ Cannot connect to Python Server. Make sure server.py is running.</div>
+
+    <div class="stage-container">
+        
+        <div class="unit active" id="u1">
+            <div class="unit-label">RAW INPUT</div>
+            <div class="display-area">
+                <img id="inputImg" class="display-content" style="opacity:0">
+                <div id="placeholder"
+                    style="position:absolute; inset:0; display:flex; justify-content:center; align-items:center; color:#333; font-size:0.8rem;">
+                    [ NO SIGNAL ]</div>
+            </div>
+        </div>
+        <div class="arrow" id="a1">➔</div>
+
+        
+        <div class="unit" id="u2">
+            <div class="unit-label">PREPROCESSING</div>
+            <div class="display-area">
+                <canvas id="scanCanvas" class="display-content"></canvas>
+                <div id="scanner"></div>
+            </div>
+        </div>
+        <div class="arrow" id="a2">➔</div>
+
+        
+        <div class="unit" id="u3">
+            <div class="unit-label">TENSOR TRANSFORMATION</div>
+            <div class="display-area">
+                <canvas id="matrixBgCanvas"
+                    style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0.3;"></canvas>
+                <div class="matrix-container" id="matrixGrid"></div>
+            </div>
+        </div>
+        <div class="arrow" id="a3">➔</div>
+
+        
+        <div class="unit" id="u4">
+            <div class="unit-label">NEURAL ENGINE</div>
+            <div class="display-area" style="background:none;">
+                <svg id="networkSvg" viewBox="0 0 280 280"></svg>
+            </div>
+        </div>
+        <div class="arrow" id="a4">➔</div>
+
+        
+        <div class="unit" id="u5">
+            <div class="unit-label">FINAL PREDICTION</div>
+            <div class="display-area">
+                <div class="result-box" id="resBox">
+
+                    <div class="main-res" id="resName">---</div>
+                    <div class="conf-container">
+                        <div class="conf-circle">
+                            <span class="conf-value" id="confValue">--</span>
+                        </div>
+                        <div class="conf-label">CONFIDENCE</div>
+                    </div>
+                    <div class="predictions-list" id="predList">
+                        
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SIZE = 280;
+        const GRID_DIM = 14;
+
+        const fileInput = document.getElementById('fileInput');
+        const startBtn = document.getElementById('startBtn');
+        const inputImg = document.getElementById('inputImg');
+        const scanCanvas = document.getElementById('scanCanvas');
+        const scanCtx = scanCanvas.getContext('2d');
+        const matrixBgCanvas = document.getElementById('matrixBgCanvas');
+        const mBgCtx = matrixBgCanvas.getContext('2d');
+
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        function resizeAndDraw(img, canvas) {
+            canvas.width = SIZE; canvas.height = SIZE;
+            const ctx = canvas.getContext('2d');
+            const scale = Math.min(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
+            const w = img.naturalWidth * scale;
+            const h = img.naturalHeight * scale;
+            const x = (SIZE - w) / 2;
+            const y = (SIZE - h) / 2;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, SIZE, SIZE);
+            ctx.drawImage(img, x, y, w, h);
+            return ctx;
+        }
+
+        let netData = [];
+        function buildNetwork() {
+            const svg = document.getElementById('networkSvg');
+            const layers = [4, 6, 6, 2];
+            const layerX = [30, 100, 170, 240];
+            let nodes = [];
+            layers.forEach((count, lIdx) => {
+                const spacing = 200 / count;
+                const offset = (SIZE - (spacing * (count - 1))) / 2;
+                let layerNodes = [];
+                for (let i = 0; i < count; i++) layerNodes.push({ x: layerX[lIdx], y: offset + i * spacing, id: `${lIdx}-${i}` });
+                nodes.push(layerNodes);
+            });
+            for (let i = 0; i < nodes.length - 1; i++) {
+                nodes[i].forEach(start => {
+                    nodes[i + 1].forEach(end => {
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", start.x); line.setAttribute("y1", start.y);
+                        line.setAttribute("x2", end.x); line.setAttribute("y2", end.y);
+                        line.setAttribute("class", "link");
+                        svg.appendChild(line);
+
+                        const wText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        wText.setAttribute("x", (start.x + end.x) / 2); wText.setAttribute("y", (start.y + end.y) / 2 - 5);
+                        wText.setAttribute("class", "floating-weight");
+                        wText.setAttribute("text-anchor", "middle");
+                        wText.textContent = (Math.random() * 2 - 1).toFixed(2);
+                        svg.appendChild(wText);
+
+                        const p = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        p.setAttribute("cx", start.x); p.setAttribute("cy", start.y);
+                        p.setAttribute("r", 3); p.setAttribute("class", "particle");
+                        netData.push({ p, wText, start, end });
+                        svg.appendChild(p);
+                    });
+                });
+            }
+            nodes.flat().forEach(n => {
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                c.setAttribute("cx", n.x); c.setAttribute("cy", n.y); c.setAttribute("r", 5);
+                c.setAttribute("class", "node"); c.id = `node-${n.id}`;
+                svg.appendChild(c);
+            });
+            return nodes;
+        }
+        const allNodes = buildNetwork();
+
+        let currentFile = null;
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                currentFile = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    inputImg.src = evt.target.result;
+                    inputImg.onload = () => {
+                        inputImg.style.opacity = 1;
+                        document.getElementById('placeholder').style.display = 'none';
+                        startBtn.disabled = false;
+                        resizeAndDraw(inputImg, scanCanvas);
+                        resizeAndDraw(inputImg, matrixBgCanvas);
+                    };
+                };
+                reader.readAsDataURL(currentFile);
+            }
+        });
+
+        startBtn.addEventListener('click', async () => {
+            if (!currentFile) return;
+            startBtn.disabled = true;
+
+            document.getElementById('u2').classList.add('active');
+            document.getElementById('a1').classList.add('active');
+            const scanner = document.getElementById('scanner');
+            scanner.style.display = 'block';
+            for (let i = 0; i <= 100; i += 2) {
+                scanner.style.top = i + "%";
+                if (i % 10 === 0) { scanCtx.filter = `grayscale(${i}%) contrast(1.2)`; scanCtx.drawImage(scanCanvas, 0, 0); }
+                await wait(30);
+            }
+            scanner.style.display = 'none';
+
+            document.getElementById('u3').classList.add('active');
+            document.getElementById('a2').classList.add('active');
+            const grid = document.getElementById('matrixGrid');
+            grid.innerHTML = '';
+            const pData = mBgCtx.getImageData(0, 0, SIZE, SIZE).data;
+            let cells = [];
+            for (let i = 0; i < GRID_DIM * GRID_DIM; i++) {
+                const div = document.createElement('div'); div.className = 'matrix-cell';
+                grid.appendChild(div); cells.push(div);
+            }
+            for (let row = 0; row < GRID_DIM; row++) {
+                for (let col = 0; col < GRID_DIM; col++) {
+                    const idx = row * GRID_DIM + col;
+                    const px = Math.floor(col * (SIZE / GRID_DIM) + (SIZE / GRID_DIM) / 2);
+                    const py = Math.floor(row * (SIZE / GRID_DIM) + (SIZE / GRID_DIM) / 2);
+                    cells[idx].innerText = pData[(py * SIZE + px) * 4];
+                    cells[idx].style.opacity = 1;
+                }
+                await wait(80);
+            }
+
+            document.getElementById('u4').classList.add('active');
+            document.getElementById('a3').classList.add('active');
+            allNodes[0].forEach(n => document.getElementById(`node-${n.id}`).classList.add('active'));
+
+            let predictionData = null;
+            let fetchError = null;
+            let isProcessing = true;
+
+            const formData = new FormData();
+            formData.append('image', currentFile);
+
+            const fetchPromise = fetch('http://127.0.0.1:5000/predict', { method: 'POST', body: formData })
+                .then(res => {
+                    if (!res.ok) throw new Error(`Server Error: ${res.status}`);
+                    return res.json();
+                })
+                .then(data => { predictionData = data; isProcessing = false; })
+                .catch(err => { fetchError = err; isProcessing = false; });
+
+            while (isProcessing) {
+
+                netData.forEach(d => {
+                    if (Math.random() > 0.85) {
+                        d.wText.style.transition = "opacity 1s, transform 2s";
+                        d.wText.style.opacity = 1; d.wText.style.transform = "translateY(-10px)";
+                        setTimeout(() => { d.wText.style.opacity = 0; d.wText.style.transform = "translateY(0)" }, 1500);
+                    }
+                });
+
+                for (let item of netData) {
+                    if (Math.random() > 0.8) {
+                        const p = item.p;
+                        p.style.transition = 'none';
+                        p.setAttribute("cx", item.start.x); p.setAttribute("cy", item.start.y);
+                        p.style.opacity = 1;
+                        void p.offsetWidth;
+
+                        p.style.transition = `cx 1s ease-in-out, cy 1s ease-in-out, opacity 0.5s`;
+                        p.setAttribute("cx", item.end.x); p.setAttribute("cy", item.end.y);
+                        setTimeout(() => p.style.opacity = 0, 900);
+                    }
+                }
+
+                await wait(1000);
+            }
+
+
+            if (fetchError || (predictionData && predictionData.error)) {
+                console.error(fetchError || predictionData.error);
+                document.getElementById('resName').innerText = "ERROR";
+                document.getElementById('resName').style.color = "red";
+                document.getElementById('resConf').innerText = predictionData ? predictionData.error : "Check Server Console";
+                document.getElementById('u5').classList.add('active');
+                return;
+            }
+
+            allNodes[3].forEach(n => document.getElementById(`node-${n.id}`).classList.add('active'));
+
+
+            const resBox = document.getElementById('u5');
+            resBox.classList.add('active');
+            document.getElementById('a4').classList.add('active');
+            await wait(500);
+
+            if (predictionData) {
+                const label = predictionData.result;
+                const conf = predictionData.confidence.toFixed(1);
+                const isHealthy = label.toLowerCase().includes("healthy");
+                const color = isHealthy ? "var(--healthy)" : "var(--disease)";
+
+                const resBox = document.getElementById('resBox');
+                resBox.classList.add('revealed');
+
+
+
+                const nameEl = document.getElementById('resName');
+                const btnHtml = `<span class="wiki-btn" title="View Details & Chat">
+                    <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                </span>`;
+                nameEl.innerHTML = label.toUpperCase() + btnHtml;
+                nameEl.style.color = color;
+                nameEl.style.textShadow = `0 0 15px ${color}`;
+
+                const confValue = document.getElementById('confValue');
+                confValue.innerText = `${conf}%`;
+                confValue.style.color = color;
+
+                const circle = document.querySelector('.conf-circle');
+                circle.style.borderColor = "#222";
+
+                const predList = document.getElementById('predList');
+                predList.innerHTML = "";
+
+                predictionData.bars_data.forEach((item, index) => {
+                    const width = item.probability.toFixed(1);
+                    const isTop = index === 0;
+                    const barColor = isTop ? color : '#555';
+
+                    const div = document.createElement('div');
+                    div.className = 'pred-item';
+                    div.innerHTML = `
+                        <div class="pred-rank">${index + 1}</div>
+                        <div class="pred-info">
+                            <div class="result-row" style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                                <span class="pred-name">${item.class}</span>
+                                <span class="pred-pct">${width}%</span>
+                            </div>
+                            <div class="pred-bar-track">
+                                <div class="pred-bar-fill" style="width:0%; background:${barColor}"></div>
+                            </div>
+                        </div>
+                    `;
+                    predList.appendChild(div);
+
+                    setTimeout(() => {
+                        div.querySelector('.pred-bar-fill').style.width = `${width}%`;
+                    }, 100 + (index * 100));
+                });
+
+                resBox.style.cursor = "pointer";
+                resBox.onclick = () => {
+                    localStorage.setItem('detected_disease', label);
+                    localStorage.setItem('analyzed_image', inputImg.src);
+                    localStorage.setItem('detection_confidence', conf);
+                    window.open('wiki.html', '_blank', 'width=1200,height=900');
+                };
+            }
+        });
+</script>
+</body>
+
+</html>

@@ -77,7 +77,7 @@ BotaniX is an intelligent agricultural tool designed to help farmers, researcher
 - Real-time preprocessing pipeline
 
 #### 🧠 **Dual AI Engine**
-- **Gemini 3 Flash**: Cloud-based, fast responses, requires API key
+- **Gemini 2.0 Flash**: Cloud-based, state-of-the-art fast responses, requires API key
 - **Gemma2 via Ollama**: Local inference, privacy-preserving, offline capable
 - Seamless fallback between engines
 - Configurable temperature and response length
@@ -222,27 +222,18 @@ pip install -r requirements.txt
 
 #### 4. Acquire Model Files
 
-The EfficientNetB3 model must be placed in the project root. Choose one:
+The EfficientNetB3 model must be placed in the project root.
 
-**Option A: Use Pre-trained Model**
-- Download `best_model_phase1.keras` from project releases or storage
-- Place in the root directory: `./best_model_phase1.keras`
+- Download `model.keras` from project releases or storage.
+- Place in the root directory: `./model.keras`
 
-**Option B: Train Your Own**
-```bash
-python train_model.py --dataset ./data/plant_diseases --epochs 50
-```
+#### 5. Configure API Keys
 
-#### 5. Configure API Keys (Optional)
-
-For cloud-based Gemini:
+Create a `.env` file in the project root based on `.env.example`:
 
 ```bash
-# Create .env file in project root
-echo "GEMINI_API_KEY=your_api_key_here" > .env
+cp .env.example .env
 ```
-
-Get a Gemini API key from [Google AI Studio](https://aistudio.google.com).
 
 #### 6. Setup Ollama (Optional, for local LLM)
 
@@ -343,13 +334,15 @@ The disease database is stored in `data/diseases.json` with structure:
 #### Start the Web Server
 
 ```bash
-python app.py
+python server.py
 ```
 
 Expected output:
 ```
+🚀 Starting Local Server...
+✅ Vision Model Loaded!
+✅ Disease database loaded!
  * Running on http://localhost:5000
- * Debug mode: off
 ```
 
 Access the web interface at `http://localhost:5000`
