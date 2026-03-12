@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepVision | Disease Wiki</title>
+    <style>
+        
+        :root {
+            --bg: #050505;
+            --accent: #00f3ff;
+            --secondary: #0066ff;
+            --matrix: #00ff41;
+            --text-main: #ffffff;
+            --panel: #0a0a0a;
+            --border: #222;
+            --healthy: #00ff41;
+            --disease: #ff3333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        
+        nav {
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #111;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            position: sticky;
+            top: 0;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+        }
+
+        .brand b {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #666;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 40px;
+            padding-bottom: 100px;
+            
+        }
+
+        
+        .wiki-hero {
+            display: flex;
+            gap: 40px;
+            padding: 30px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .hero-image {
+            width: 250px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+        }
+
+        .hero-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .disease-title {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .disease-status {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            width: fit-content;
+        }
+
+        .status-healthy {
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid var(--healthy);
+            color: var(--healthy);
+        }
+
+        .status-disease {
+            background: rgba(255, 51, 51, 0.1);
+            border: 1px solid var(--disease);
+            color: var(--disease);
+        }
+
+        .confidence-bar {
+            margin-top: auto;
+        }
+
+        .confidence-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .confidence-track {
+            width: 100%;
+            height: 8px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+            border-radius: 4px;
+            transition: width 1s ease-out;
+        }
+
+        
+        .wiki-section {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 15px 25px;
+            background: linear-gradient(90deg, rgba(0, 102, 255, 0.1), transparent);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-icon {
+            font-size: 1.4rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
+
+        .section-content {
+            padding: 25px;
+            line-height: 1.8;
+            color: #aaa;
+        }
+
+        .section-content strong {
+            color: var(--text-main);
+        }
+
+        .loading-text {
+            color: #666;
+            font-style: italic;
+        }
+
+        
+        .treatment-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .treatment-card {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .treatment-type {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            padding: 5px 12px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .organic {
+            background: rgba(0, 255, 65, 0.1);
+            color: var(--healthy);
+        }
+
+        .chemical {
+            background: rgba(255, 165, 0, 0.1);
+            color: #ffa500;
+        }
+
+        
+        .chat-floating {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 15px 20px 20px;
+            background: linear-gradient(to top, rgba(5, 5, 5, 0.98) 0%, rgba(5, 5, 5, 0.95) 80%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .chat-input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            pointer-events: auto;
+        }
+
+        .chat-input-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 8px 8px 8px 20px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-input-box:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 4px 30px rgba(0, 243, 255, 0.15);
+        }
+
+        .chat-input-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            padding: 10px 0;
+        }
+
+        .chat-input-box input::placeholder {
+            color: #666;
+        }
+
+        .chat-input-box .chat-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .chat-send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .chat-send-btn:hover {
+            background: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .chat-send-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        
+        .qa-container {
+            margin-top: 30px;
+        }
+
+        .qa-section {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .qa-question {
+            padding: 20px 25px;
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.08), transparent);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .qa-question-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .qa-question-text {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            line-height: 1.5;
+            padding-top: 4px;
+        }
+
+        .qa-answer {
+            padding: 25px;
+            line-height: 1.8;
+            color: #bbb;
+        }
+
+        .qa-answer-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.8rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .qa-answer-content {
+            color: #ccc;
+        }
+
+        .qa-answer-content b,
+        .qa-answer-content strong {
+            color: var(--text-main);
+        }
+
+        .qa-loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .qa-loading-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .qa-loading-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: dotPulse 1.4s infinite ease-in-out;
+        }
+
+        .qa-loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .qa-loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotPulse {
+
+            0%,
+            80%,
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            40% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="brand">DEEP<b>VISION</b> | <span style="color:#666; font-size:0.9rem;">WIKI</span></div>
+        <div class="nav-links">
+            <a href="index.html">← Back to Scanner</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        
+        <div class="wiki-hero">
+            <img id="heroImage" class="hero-image" src="" alt="Analyzed Plant">
+            <div class="hero-content">
+                <div class="disease-title" id="diseaseTitle">Loading...</div>
+                <div class="disease-status status-disease" id="diseaseStatus">ANALYZING</div>
+                <p style="color:#888; margin-bottom:20px;" id="diseaseSubtitle">
+                    Loading disease information...
+                </p>
+                <div class="confidence-bar">
+                    <div class="confidence-label">DETECTION CONFIDENCE</div>
+                    <div class="confidence-track">
+                        <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="wiki-section">
+            <div class="section-header">
+                <span class="section-icon">📋</span>
+                <span class="section-title">Overview</span>
+            </div>
+            <div class="section-content" id="overviewContent">
+                <span class="loading-text">Generating overview...</span>
+            </div>
+        </div>
+
+        
+        <div class="wiki-section">
+            <div class="section-header">
+                <span class="section-icon">🔍</span>
+                <span class="section-title">Symptoms & Identification</span>
+            </div>
+            <div class="section-content" id="symptomsContent">
+                <span class="loading-text">Analyzing symptoms...</span>
+            </div>
+        </div>
+
+        
+        <div class="wiki-section">
+            <div class="section-header">
+                <span class="section-icon">💊</span>
+                <span class="section-title">Treatment Options</span>
+            </div>
+            <div class="section-content">
+                <div class="treatment-grid" id="treatmentGrid">
+                    <div class="treatment-card">
+                        <span class="treatment-type organic">🌿 Organic</span>
+                        <p id="organicTreatment" class="loading-text">Loading organic treatment...</p>
+                    </div>
+                    <div class="treatment-card">
+                        <span class="treatment-type chemical">⚗️ Chemical</span>
+                        <p id="chemicalTreatment" class="loading-text">Loading chemical treatment...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="wiki-section">
+            <div class="section-header">
+                <span class="section-icon">🛡️</span>
+                <span class="section-title">Prevention Tips</span>
+            </div>
+            <div class="section-content" id="preventionContent">
+                <span class="loading-text">Generating prevention tips...</span>
+            </div>
+        </div>
+
+        
+        <div class="qa-container" id="qaContainer">
+            
+        </div>
+    </div>
+
+    
+    <div class="chat-floating">
+        <div class="chat-input-wrapper">
+            <div class="chat-input-box">
+                <div class="chat-icon">🧬</div>
+                <input type="text" id="chatInput" placeholder="Ask BotaniX about this disease..."
+                    onkeypress="handleKeyPress(event)">
+                <button class="chat-send-btn" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const disease = localStorage.getItem('detected_disease') || "Unknown Disease";
+        const imgData = localStorage.getItem('analyzed_image');
+        const confidence = localStorage.getItem('detection_confidence') || "95";
+
+        document.getElementById('diseaseTitle').innerText = disease;
+        if (imgData) {
+            document.getElementById('heroImage').src = imgData;
+        }
+
+        const isHealthy = disease.toLowerCase().includes('healthy');
+        const statusEl = document.getElementById('diseaseStatus');
+        if (isHealthy) {
+            statusEl.innerText = '✓ HEALTHY';
+            statusEl.className = 'disease-status status-healthy';
+            document.getElementById('diseaseSubtitle').innerText = 'No disease detected. Your plant appears to be in good health.';
+        } else {
+            statusEl.innerText = '⚠ DISEASE DETECTED';
+            statusEl.className = 'disease-status status-disease';
+            document.getElementById('diseaseSubtitle').innerText = 'A potential plant disease has been identified. Review the information below.';
+        }
+
+        setTimeout(() => {
+            document.getElementById('confidenceFill').style.width = confidence + '%';
+        }, 300);
+
+        async function loadWikiContent() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/wiki-info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ disease: disease })
+                });
+                const data = await response.json();
+
+                if (data.scientific_name) {
+                    document.getElementById('diseaseSubtitle').innerHTML =
+                        `<strong>Scientific Name:</strong> <em>${data.scientific_name}</em><br>
+                         <strong>Type:</strong> ${data.type} | <strong>Severity:</strong> ${data.severity}`;
+                }
+
+                document.getElementById('overviewContent').innerHTML = data.overview || 'Information not available.';
+
+                if (data.symptoms && data.symptoms.length > 0) {
+                    const symptomsList = data.symptoms.map(s => `<li>${s}</li>`).join('');
+                    document.getElementById('symptomsContent').innerHTML = `
+                        <ul style="margin-left:20px; list-style-type:disc;">
+                            ${symptomsList}
+                        </ul>
+                        ${data.causes ? `<p style="margin-top:15px;"><strong>Cause:</strong> ${data.causes}</p>` : ''}
+                    `;
+                } else {
+                    document.getElementById('symptomsContent').innerHTML =
+                        '<span style="color:var(--healthy);">✓ No disease symptoms detected - plant appears healthy.</span>';
+                }
+
+                if (data.treatment) {
+                    document.getElementById('organicTreatment').innerHTML = data.treatment.organic || 'No organic treatment specified.';
+                    document.getElementById('chemicalTreatment').innerHTML = data.treatment.chemical || 'No chemical treatment specified.';
+                }
+
+                if (data.prevention && data.prevention.length > 0) {
+                    const preventionList = data.prevention.map(p => `<li>${p}</li>`).join('');
+                    document.getElementById('preventionContent').innerHTML = `
+                        <ul style="margin-left:20px; list-style-type:disc;">
+                            ${preventionList}
+                        </ul>
+                    `;
+                } else {
+                    document.getElementById('preventionContent').innerHTML = 'Continue regular plant maintenance.';
+                }
+
+            } catch (e) {
+                console.error('Error loading wiki content:', e);
+                document.getElementById('overviewContent').innerHTML =
+                    '<span style="color:#666;">Unable to load content. Check server connection.</span>';
+            }
+        }
+
+        loadWikiContent();
+
+        const qaContainer = document.getElementById('qaContainer');
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            input.focus();
+
+            const qaSection = document.createElement('div');
+            qaSection.className = 'qa-section';
+            qaSection.innerHTML = `
+                <div class="qa-question">
+                    <div class="qa-question-icon">❓</div>
+                    <div class="qa-question-text">${text}</div>
+                </div>
+                <div class="qa-answer" id="answer-${Date.now()}">
+                    <div class="qa-loading">
+                        <div class="qa-loading-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span>BotaniX is analyzing...</span>
+                    </div>
+                </div>
+            `;
+
+            qaContainer.appendChild(qaSection);
+
+            qaSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            const answerDiv = qaSection.querySelector('.qa-answer');
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        disease: disease
+                    })
+                });
+
+                const data = await response.json();
+
+                answerDiv.innerHTML = `
+                    <div class="qa-answer-header">
+                        <span>🧬</span>
+                        <span>BotaniX Response</span>
+                    </div>
+                    <div class="qa-answer-content">${data.reply}</div>
+                `;
+            } catch (e) {
+                answerDiv.innerHTML = `
+                    <div class="qa-answer-header">
+                        <span>⚠️</span>
+                        <span>Error</span>
+                    </div>
+                    <div class="qa-answer-content" style="color:#ff6b6b;">
+                        Connection error. Please ensure the server is running.
+                    </div>
+                `;
+            }
+        }
+</script>
+</body>
+
+</html>

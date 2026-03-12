@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YSS Neural Processor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success: #10b981;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        
+        .bg-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+            z-index: -1;
+        }
+
+        
+        #main-interface {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        
+        #upload-panel {
+            width: 500px;
+            height: 350px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        #upload-panel:hover {
+            border-color: var(--accent-blue);
+            background: rgba(30, 41, 59, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .upload-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .upload-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        
+        #info-panel {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            display: none;
+            text-align: center;
+        }
+
+        .step-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--accent-cyan);
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: var(--panel-bg);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent-blue);
+            transition: width 0.1s linear;
+        }
+
+        .metrics {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        
+        .anim-label {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #explanation {
+            margin-top: 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: rgba(30, 41, 59, 0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-cyan);
+            text-align: left;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-gradient"></div>
+
+    <div id="main-interface">
+        <canvas id="canvas"></canvas>
+
+        <div id="upload-panel" onclick="document.getElementById('file-input').click()">
+            <div class="upload-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+            </div>
+            <div class="upload-title">Load Input Image</div>
+            <div class="upload-subtitle">Drop image or click to browse</div>
+            <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(this)">
+        </div>
+
+        <div id="info-panel">
+            <div class="step-label" id="step-label">Initializing...</div>
+            <div class="progress-track">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="metrics" id="metrics">
+                <span id="metric-1">RES: --</span>
+                <span id="metric-2">FMT: --</span>
+                <span id="metric-3">TENSOR: --</span>
+            </div>
+            <div id="explanation">Initializing system...</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const uploadPanel = document.getElementById('upload-panel');
+        const infoPanel = document.getElementById('info-panel');
+        const stepLabel = document.getElementById('step-label');
+        const progressBar = document.getElementById('progress-bar');
+
+        const m1 = document.getElementById('metric-1');
+        const m2 = document.getElementById('metric-2');
+        const m3 = document.getElementById('metric-3');
+
+        let width, height;
+        let img = null;
+
+        const STEPS = {
+            IDLE: 0,
+            RESIZE: 1,
+            NORMALIZE: 2,
+            CHANNELS: 3,
+            FEATURES: 4,
+            POOLING: 5,
+            DONE: 6
+        };
+        let currentStep = STEPS.IDLE;
+
+        let props = {
+            x: 0, y: 0, w: 0, h: 0,
+            targetSize: 300,
+            opacity: 0,
+            progress: 0,
+            scanY: 0,
+            channelSeparation: 0,
+            kernelX: 0, kernelY: 0,
+        };
+
+        let nodes = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const dz = uploadPanel;
+        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.borderColor = '#3b82f6'; });
+        dz.addEventListener('dragleave', (e) => { e.preventDefault(); dz.style.borderColor = 'rgba(255,255,255,0.1)'; });
+        dz.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dz.style.borderColor = 'rgba(255,255,255,0.1)';
+            if (e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
+        });
+
+        function handleFileSelect(input) {
+            if (input.files[0]) process(input.files[0]);
+        }
+
+        function process(file) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                img = new Image();
+                img.src = e.target.result;
+                img.onload = startSequence;
+            };
+        }
+
+        function startSequence() {
+            uploadPanel.style.opacity = 0;
+            uploadPanel.style.transform = 'scale(0.9)';
+            setTimeout(() => uploadPanel.style.display = 'none', 300);
+
+            infoPanel.style.display = 'block';
+
+            const aspect = img.width / img.height;
+            const startH = 500;
+            const startW = startH * aspect;
+
+            props.w = startW;
+            props.h = startH;
+            props.x = (width - props.w) / 2;
+            props.y = (height - props.h) / 2;
+            props.opacity = 1;
+            props.progress = 0;
+
+            setTimeout(() => setStep(STEPS.RESIZE), 500);
+            requestAnimationFrame(animate);
+        }
+
+        const explanation = document.getElementById('explanation');
+
+        function setStep(step) {
+            currentStep = step;
+            props.progress = 0;
+
+            if (step === STEPS.RESIZE) {
+                stepLabel.innerText = "1. IMAGE RESIZING (EFFICIENTNET INPUT)";
+                m1.innerText = `RES: ${img.width}x${img.height} -> 300x300`;
+                explanation.innerText = "Resizing image to 300x300 pixels to match the fixed input requirement of the EfficientNetB3 model.";
+            } else if (step === STEPS.NORMALIZE) {
+                stepLabel.innerText = "2. PIXEL NORMALIZATION & SCALING";
+                m2.innerText = "RANGE: [0, 255] -> [0.0, 1.0]";
+                props.scanY = props.y;
+                explanation.innerText = "Scaling pixel color values from 0-255 to a 0-1 range. This helps the neural network learn patterns more effectively.";
+            } else if (step === STEPS.CHANNELS) {
+                stepLabel.innerText = "3. CHANNEL SEPARATION (TENSOR CONSTRUCTION)";
+                m3.innerText = "SHAPE: (1, 300, 300, 3)";
+                explanation.innerText = "Splitting the image into distinct Red, Green, and Blue (RGB) channels to form a 3D Tensor.";
+            } else if (step === STEPS.FEATURES) {
+                stepLabel.innerText = "4. CONVOLUTION (FEATURE EXTRACTION)";
+                m3.innerText = "APPLYING 3x3 KERNELS";
+                props.kernelX = props.x;
+                props.kernelY = props.y;
+                explanation.innerText = "Scanning the image with 3x3 Convolutional Filters (Kernels) to extract visual features like edges, textures, and shapes.";
+            } else if (step === STEPS.POOLING) {
+                stepLabel.innerText = "5. GLOBAL AVERAGE POOLING";
+                m3.innerText = "REDUCING DIMENSIONS";
+                explanation.innerText = "Compressing the extracted feature maps into a dense vector by averaging values, summarizing the image content.";
+            } else if (step === STEPS.DONE) {
+                stepLabel.innerText = "OUTPUT GENERATED";
+                m3.innerText = "DENSE LAYER COMPLETE";
+                progressBar.style.background = '#10b981';
+                explanation.innerText = "Feature extraction complete. The vector has been passed to the Dense Layer and a prediction has been generated.";
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            if (!img) return;
+
+            const cx = width / 2;
+            const cy = height / 2;
+
+            if (currentStep === STEPS.RESIZE) {
+                props.progress += 0.002;
+                const t = easeInOut(Math.min(props.progress, 1));
+
+                const currentW = lerp(props.w, 300, 0.05);
+                const currentH = lerp(props.h, 300, 0.05);
+                props.w = currentW;
+                props.h = currentH;
+                props.x = cx - props.w / 2;
+                props.y = cy - props.h / 2;
+
+                drawImageBase(ctx);
+
+                ctx.strokeStyle = '#3b82f6';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.strokeRect(cx - 150, cy - 150, 300, 300);
+                ctx.setLineDash([]);
+
+                if (Math.abs(props.w - 300) < 1 && props.progress > 1) {
+                    setStep(STEPS.NORMALIZE);
+                }
+            }
+            else if (currentStep === STEPS.NORMALIZE) {
+                props.progress += 0.002;
+                if (props.progress > 1.2) setStep(STEPS.CHANNELS);
+
+                drawImageBase(ctx);
+
+                const scanH = props.progress * (props.h + 100);
+                const lineY = props.y + scanH;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(props.x, props.y, props.w, Math.min(scanH, props.h));
+                ctx.clip();
+                ctx.globalCompositeOperation = 'screen';
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+                ctx.fillRect(props.x, props.y, props.w, props.h);
+                ctx.restore();
+
+                if (lineY < props.y + props.h) {
+                    ctx.beginPath();
+                    ctx.moveTo(props.x, lineY);
+                    ctx.lineTo(props.x + props.w, lineY);
+                    ctx.strokeStyle = '#06b6d4';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#06b6d4';
+                    ctx.shadowBlur = 10;
+                    ctx.stroke();
+                }
+            }
+            else if (currentStep === STEPS.CHANNELS) {
+                props.progress += 0.003;
+                const t = Math.sin(props.progress * Math.PI);
+                props.channelSeparation = t * 60;
+
+                drawImageChannel(ctx, img, props.x, props.y, props.w, props.h, 'G', 0, 255, 0);
+                drawImageChannel(ctx, img, props.x - props.channelSeparation, props.y - props.channelSeparation / 2, props.w, props.h, 'R', 255, 0, 0, t);
+                drawImageChannel(ctx, img, props.x + props.channelSeparation, props.y + props.channelSeparation / 2, props.w, props.h, 'B', 0, 100, 255, t);
+
+                if (props.progress >= 1) setStep(STEPS.FEATURES);
+            }
+            else if (currentStep === STEPS.FEATURES) {
+                const kernelSpeed = 3;
+                props.kernelX += kernelSpeed;
+                if (props.kernelX > props.x + props.w - 30) {
+                    props.kernelX = props.x;
+                    props.kernelY += 30;
+                }
+
+                drawImageBase(ctx);
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(props.x, props.y, props.w, props.kernelY - props.y);
+                ctx.rect(props.x, props.kernelY, props.kernelX - props.x, 30);
+                ctx.clip();
+                ctx.globalCompositeOperation = 'luminosity';
+                ctx.drawImage(img, props.x, props.y, props.w, props.h);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+                ctx.fillRect(props.x, props.y, props.w, props.h);
+                ctx.restore();
+
+                if (props.kernelY < props.y + props.h) {
+                    const kSize = 30;
+                    const kx = props.kernelX;
+                    const ky = props.kernelY;
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(kx, ky, kSize, kSize);
+
+                    const wx = kx + 40;
+                    const wy = ky - 20;
+
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                    ctx.fillRect(wx, wy, 80, 80);
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(wx, wy, 80, 80);
+
+                    ctx.font = '10px JetBrains Mono';
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillText("WEIGHTS", wx + 5, wy + 12);
+
+                    ctx.fillStyle = '#fff';
+                    for (let r = 0; r < 3; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            const val = Math.abs(Math.sin(kx * c + ky * r + Date.now() / 100)).toFixed(1);
+                            ctx.fillText(val, wx + 10 + c * 25, wy + 30 + r * 20);
+                        }
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(kx + kSize, ky + kSize / 2);
+                    ctx.lineTo(wx, wy + 40);
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.stroke();
+
+                    m3.innerText = `KERNEL: 3x3 | ACTIVATION: ${(Math.random()).toFixed(4)}`;
+                } else {
+                    setStep(STEPS.POOLING);
+                }
+            }
+            else if (currentStep === STEPS.POOLING) {
+                props.progress += 0.003;
+                drawImageBase(ctx);
+
+                const gridSize = 10 + props.progress * 50;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(props.x, props.y, props.w, props.h);
+                ctx.clip();
+
+                ctx.strokeStyle = 'rgba(6, 182, 212, 0.5)';
+                ctx.lineWidth = 1;
+                for (let gx = props.x; gx < props.x + props.w; gx += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(gx, props.y); ctx.lineTo(gx, props.y + props.h); ctx.stroke();
+                }
+                for (let gy = props.y; gy < props.y + props.h; gy += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(props.x, gy); ctx.lineTo(props.x + props.w, gy); ctx.stroke();
+                }
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#000';
+                ctx.shadowBlur = 4;
+                ctx.fillText("GLOBAL AVERAGE POOLING", cx, cy);
+                ctx.restore();
+
+                if (props.progress > 1.5) setStep(STEPS.DONE);
+            }
+            else if (currentStep === STEPS.DONE) {
+                drawImageBase(ctx);
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#10b981';
+                ctx.stroke();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '30px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText("READY", cx, cy + 10);
+            }
+
+            const total = 6;
+            const currentP = currentStep / (total - 1);
+            progressBar.style.width = (currentP * 100) + '%';
+
+            requestAnimationFrame(animate);
+        }
+
+        function drawImageChannel(ctx, img, x, y, w, h, chan, r, g, b, t = 1) {
+            ctx.save();
+            ctx.globalAlpha = 0.6 * (t || 1);
+            ctx.globalCompositeOperation = 'screen';
+            ctx.drawImage(img, x, y, w, h);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, w, h);
+            if (t > 0.5) {
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.font = '10px monospace';
+                ctx.fillText(`CH: ${chan}`, x, y - 5);
+            }
+            ctx.restore();
+        }
+
+        function drawImageBase(ctx) {
+            ctx.save();
+            ctx.drawImage(img, props.x, props.y, props.w, props.h);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(props.x, props.y, props.w, props.h);
+            ctx.restore();
+        }
+
+        function lerp(a, b, t) { return a + (b - a) * t; }
+        function easeInOut(t) { return t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotaniX | AI Consultant</title>
+    <style>
+        :root {
+            --bg: #0b0d11;
+            --panel: #161b22;
+            --accent: #2f81f7;
+            --accent-glow: rgba(47, 129, 247, 0.4);
+            --user-msg: #238636; 
+            --bot-msg: #1f6feb; 
+            --text: #c9d1d9;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            margin: 0; display: flex; height: 100vh;
+        }
+
+        
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            border-right: 1px solid #30363d;
+            padding: 25px;
+            display: flex; flex-direction: column; align-items: center;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        .bot-avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2f81f7, #00f3ff);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 40px; margin-bottom: 15px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .leaf-preview {
+            width: 100%; height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            margin-bottom: 15px;
+            margin-top: 20px;
+        }
+        .disease-badge {
+            background: rgba(31, 111, 235, 0.15);
+            color: #58a6ff;
+            border: 1px solid rgba(56, 139, 253, 0.4);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        
+        .chat-area {
+            flex: 1;
+            display: flex; flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(47, 129, 247, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 80% 80%, rgba(35, 134, 54, 0.05) 0%, transparent 20%);
+        }
+        .messages {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        
+        .msg {
+            max-width: 75%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            animation: fadeIn 0.3s ease;
+            position: relative;
+        }
+        .bot { 
+            align-self: flex-start; 
+            background: rgba(31, 111, 235, 0.1); 
+            border: 1px solid rgba(31, 111, 235, 0.3);
+            border-bottom-left-radius: 2px;
+            color: #e6edf3;
+        }
+        .bot::before { content: "BotaniX"; position: absolute; top: -20px; left: 0; font-size: 0.7rem; color: #58a6ff; font-weight: bold; }
+        
+        .user { 
+            align-self: flex-end; 
+            background: rgba(35, 134, 54, 0.2); 
+            border: 1px solid rgba(35, 134, 54, 0.4);
+            border-bottom-right-radius: 2px;
+            color: white;
+        }
+        .user::before { content: "You"; position: absolute; top: -20px; right: 0; font-size: 0.7rem; color: #7ee787; font-weight: bold; }
+
+        
+        .input-box {
+            padding: 20px 40px;
+            background: var(--panel);
+            border-top: 1px solid #30363d;
+            display: flex; gap: 15px;
+        }
+        input {
+            flex: 1;
+            background: #0d1117; border: 1px solid #30363d;
+            color: white; padding: 15px; border-radius: 6px;
+            font-size: 1rem; outline: none; transition: 0.2s;
+        }
+        input:focus { border-color: var(--accent); }
+        button {
+            background: var(--accent); border: none;
+            color: white; padding: 0 30px; font-weight: bold;
+            border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        button:hover { background: #388bfd; }
+
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="bot-avatar">🧬</div>
+        <h2 style="color:white; margin:0;">BotaniX</h2>
+        <span style="color:#8b949e; font-size:0.8rem;">AI PATHOLOGIST SYSTEM</span>
+        
+        <img id="leafImg" class="leaf-preview" src="">
+        
+        <label style="color:#8b949e; font-size:0.7rem; margin-bottom:5px;">DETECTED DIAGNOSIS</label>
+        <div id="diseaseTitle" class="disease-badge">Analyzing...</div>
+        
+        <div style="margin-top:auto; font-size:0.8rem; color:#8b949e; text-align:center;">
+            Powered by Google Gemini 3 Flash
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="messages" id="chatBox">
+            
+        </div>
+        <div class="input-box">
+            <input type="text" id="userIn" placeholder="Ask about cures, prevention, or causes..." onkeypress="handleKey(event)">
+            <button onclick="sendMessage()">SEND</button>
+        </div>
+    </div>
+
+    <script>
+        const disease = localStorage.getItem('detected_disease') || "Unknown";
+        const imgData = localStorage.getItem('analyzed_image');
+
+        document.getElementById('diseaseTitle').innerText = disease;
+        if(imgData) document.getElementById('leafImg').src = imgData;
+
+        const chatBox = document.getElementById('chatBox');
+
+        setTimeout(() => {
+            addMessage(`Diagnosis complete. I have detected <b>${disease}</b>.<br><br>I can provide organic treatment plans, chemical recommendations, or explain the lifecycle of this disease. How can I assist?`, 'bot');
+        }, 500);
+
+        function handleKey(e) { if(e.key === 'Enter') sendMessage(); }
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `msg ${sender}`;
+            div.innerHTML = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userIn');
+            const text = input.value.trim();
+            if(!text) return;
+
+            addMessage(text, 'user');
+            input.value = "";
+            input.focus();
+
+            const typingId = 'typing-' + Date.now();
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'msg bot';
+            typingDiv.innerHTML = '<span style="color:#8b949e; font-style:italic;">BotaniX is typing...</span>';
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        disease: disease
+                    })
+                });
+
+                const data = await response.json();
+
+                chatBox.removeChild(typingDiv);
+                addMessage(data.reply, 'bot');
+
+            } catch(e) {
+                chatBox.removeChild(typingDiv);
+                addMessage("⚠️ Connection Error: I cannot reach the server.", 'bot');
+            }
+        }
+</script>
+</body>
+</html>
